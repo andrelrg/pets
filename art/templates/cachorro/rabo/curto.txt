@@ -1,0 +1,14 @@
+# Rabo bem curtinho (cotoco). 4x5.
+@base 1 4
+=== a
+...O
+..OQ
+.OQO
+OQO.
+.O..
+=== b
+....
+O...
+QOO.
+OQQO
+.OO.

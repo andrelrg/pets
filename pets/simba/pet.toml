@@ -13,6 +13,7 @@ olhos = "grandes_redondos"    # esbugalhados, olhar desconfiado
 padrao = "mascara"            # branco com máscara caramelo nos lados do rosto e orelhas
 listra_testa = true           # faixa branca do meio da testa até o focinho
 corpo = "magro"
+rabo = "curto"                # cotoco, bem menor que o da Nala
 
 [aparencia.cores]
 base  = "#f4efe6"             # branco da pelagem

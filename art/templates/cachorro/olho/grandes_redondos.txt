@@ -1,0 +1,41 @@
+# Olho em camadas:
+#   forma  -> contorno (O) + branco do olho (Z)
+#   iris   -> desenhada em @iris + deslocamento do olhar, recortada pelo branco
+#   meio / desconfiado / fechado -> pálpebra por cima ("-" apaga o olho e
+#             mostra o pelo, "O" é a linha da pálpebra)
+# Desenhado como o olho à esquerda de quem olha; o da direita é espelhado
+# (a íris não: o olhar vai para o mesmo lado nos dois olhos).
+@iris 1 1
+=== forma
+.OOOO.
+OZZZZO
+OZZZZO
+OZZZZO
+OZZZZO
+.OOOO.
+=== iris
+XXXX
+XYXX
+XYXX
+XXXX
+=== meio
+------
+OOOOOO
+......
+......
+......
+......
+=== desconfiado
+------
+OO----
+.OOOOO
+......
+......
+......
+=== fechado
+------
+------
+------
+OOOOOO
+------
+------

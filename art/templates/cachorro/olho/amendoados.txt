@@ -1,0 +1,30 @@
+# Olho amendoado, em camadas (ver grandes_redondos.txt).
+@iris 1 1
+=== forma
+.OOOO.
+OZZZZO
+OZZZZO
+OZZZZO
+.OOOO.
+=== iris
+XXXX
+XYXX
+XXXX
+=== meio
+------
+OOOOOO
+......
+......
+......
+=== desconfiado
+------
+OO----
+.OOOOO
+......
+......
+=== fechado
+------
+------
+OOOOOO
+------
+------

@@ -22,7 +22,7 @@ base  = "#2b2422"             # preto da pelagem
 marca = "#c08a4e"             # caramelo do rosto
 claro = "#f2ede4"             # peito e patas
 nariz = "#1e1a19"
-olhos = "#6b3f1f"
+olhos = "#3b2414"
 
 [personalidade]
 tracos = ["tranquila", "carente", "doce"]

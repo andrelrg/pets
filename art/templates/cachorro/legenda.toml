@@ -1,0 +1,80 @@
+# Legenda dos templates de cachorro.
+# Cada caractere de um template é uma REGIÃO. O padrão de pelagem do pet
+# decide qual cor (papel) cada região recebe. Letra minúscula = mesma região
+# com sombra.  "." = transparente.
+
+[regioes]
+O = "contorno"
+T = "topo da cabeça"
+F = "faixa central da testa / ponte do focinho"
+K = "bochechas / ao redor dos olhos"
+W = "pinta de sobrancelha"
+M = "focinho"
+J = "queixo"
+N = "nariz"
+E = "orelha (borda)"
+I = "orelha (interior)"
+C = "peito"
+D = "corpo / dorso / quadris"
+L = "pernas"
+P = "patas"
+Q = "rabo"
+X = "olho (íris/pupila)"
+Y = "brilho do olho"
+Z = "branco do olho"
+R = "língua / boca"
+
+# Regiões com cor fixa, independentes do padrão.
+[fixas]
+O = "contorno"
+N = "nariz"
+X = "olhos"
+Y = "brilho"
+Z = "esclera"
+R = "lingua"
+
+# Padrões de pelagem: região -> papel de cor (base | marca | claro).
+[padroes.mascara]           # branco com máscara colorida no rosto e orelhas
+J = "base"
+T = "marca"
+F = "base"
+K = "marca"
+W = "marca"
+M = "base"
+E = "marca"
+I = "marca"
+C = "base"
+D = "base"
+L = "base"
+P = "base"
+Q = "base"
+
+[padroes.tricolor_sela]     # dorso/topo escuros, rosto e pernas cor de marca, peito claro
+J = "claro"
+T = "base"
+F = "base"
+K = "marca"
+W = "marca"
+M = "marca"
+E = "base"
+I = "marca"
+C = "claro"
+D = "base"
+L = "marca"
+P = "marca"
+Q = "base"
+
+[padroes.solido]            # uma cor só
+J = "base"
+T = "base"
+F = "base"
+K = "base"
+W = "base"
+M = "base"
+E = "base"
+I = "marca"
+C = "base"
+D = "base"
+L = "base"
+P = "base"
+Q = "base"

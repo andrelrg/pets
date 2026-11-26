@@ -1,0 +1,8 @@
+# Boca/língua, desenhada sobre a cabeça em @boca. 6x5.
+# A língua pode passar do queixo e cair sobre o peito.
+=== lingua
+OOOOOO
+ORRrRO
+ORRrRO
+.ORrO.
+..OO..

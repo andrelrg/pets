@@ -28,7 +28,7 @@ começar simples e manter o caminho até o microcontrolador sempre aberto.
 | Editor | **Aseprite** (ou **LibreSprite**, fork grátis) | Padrão de pixel art; timeline de animação, tags por animação, export de spritesheet + JSON. Alternativa no navegador: Piskel. |
 | Fonte da arte | `art/*.aseprite` versionado | Arquivo editável fica no repo, não só o PNG. |
 | Export | `assets/sprites/<pet>.png` + `<pet>.json` (formato Aseprite, *array*, com *frame tags*) | Cada tag = uma animação (`idle`, `falando`, `feliz`, `alerta`, `dormindo`...). |
-| Tamanho do sprite | **32×32 px** por frame (talvez 48×48 se faltar detalhe) | Lê bem escalado ×4–×7 em telas de 128–240 px. |
+| Tamanho do sprite | **48×48 px** por frame | ×5 = exatamente 240×240; espaço para olhos em camadas (íris móvel + pálpebra). |
 | Paleta | Limitada, **16 cores**, criada a partir das cores dos cachorros | Estética 8-bit + cabe fácil em memória (4 bits/pixel). |
 | Fonte do texto | Fonte bitmap pixel (ex.: 5×7 ou 8×8) com licença livre | Mesma fonte no simulador e no ESP32. |
 
