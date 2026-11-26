@@ -50,7 +50,7 @@ começar simples e manter o caminho até o microcontrolador sempre aberto.
 | Item | Sugestão inicial |
 |---|---|
 | Placa | **ESP32-S3** (PSRAM, Wi-Fi, USB nativo) — ESP32 comum também serve |
-| Tela | TFT **ST7789 240×240** ou **GC9A01 240×240 redonda** (colorida, SPI, barata). OLED SSD1306 128×64 é opção monocromática. |
+| Tela | TFT **ST7789 240×240** (quadrada) ou **ILI9341/ST7789 320×240** (2,4"–2,8", paisagem: mais espaço para pets + painel). O simulador adapta o layout a qualquer tamanho (`--largura`/`--altura`). Telas redondas (GC9A01) desperdiçam os cantos; OLED 128×64 é monocromático. |
 | Build | **PlatformIO** + framework Arduino |
 | Gráficos | **LovyanGFX** (rápido, sprites/DMA, suporta as telas acima) |
 | Áudio (opcional) | Buzzer piezo ou I2S (MAX98357A) para os bipes |

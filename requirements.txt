@@ -1,1 +1,2 @@
 pillow>=11
+pygame-ce>=2.5

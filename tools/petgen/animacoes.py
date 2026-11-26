@@ -67,6 +67,20 @@ def idle(pet: Pet) -> list[Pose]:
     return seq
 
 
+def falando(pet: Pet) -> list[Pose]:
+    """Boca abrindo e fechando. O simulador repete enquanto o texto aparece."""
+    p = pet.personalidade
+    desconfianca = p.get("desconfianca", 0.3)
+    velocidade = pet.config.get("voz", {}).get("velocidade", 1.0)
+    olhos = "desconfiado" if desconfianca >= 0.6 else "aberto"
+    passo = _ms(110 / max(0.3, velocidade))
+    seq = []
+    for i, boca in enumerate(["aberta", "entreaberta", None, "aberta", None, "entreaberta"]):
+        seq.append(Pose(olhos=olhos, boca=boca, dy_cabeca=1 if boca == "aberta" else 0, rabo="a", duracao=passo))
+    return seq
+
+
 ANIMACOES = {
     "idle": idle,
+    "falando": falando,
 }

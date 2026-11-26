@@ -84,7 +84,7 @@ def _folha_de_quadros(quadros: list[Image.Image], tags: dict, caminho: Path, esc
     folha.save(caminho)
 
 
-def exportar_pet(pet: Pet, saida: Path, escala: int) -> Resultado:
+def exportar_pet(pet: Pet, saida: Path, escala: int = 8, previews: bool = True) -> Resultado:
     cores = pet.mapa_de_cores()
     quadros: list[Image.Image] = []
     duracoes: list[int] = []
@@ -128,6 +128,8 @@ def exportar_pet(pet: Pet, saida: Path, escala: int) -> Resultado:
     }
     png.with_suffix(".json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
 
+    if not previews:
+        return Resultado(pet, png, quadros, duracoes, tags)
     _folha_de_quadros(quadros, tags, saida / "preview" / f"{pet.id}_quadros.png")
     for nome, (a, b) in tags.items():
         _salvar_gif(

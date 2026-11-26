@@ -6,3 +6,11 @@ ORRrRO
 ORRrRO
 .ORrO.
 ..OO..
+=== aberta
+OOOOOO
+ORRRRO
+.OOOO.
+=== entreaberta
+.OOOO.
+.ORRO.
+..OO..
