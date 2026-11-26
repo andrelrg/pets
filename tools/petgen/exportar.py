@@ -22,6 +22,7 @@ class Resultado:
     quadros: list[Image.Image]
     duracoes: list[int]
     tags: dict[str, tuple[int, int]] = field(default_factory=dict)
+    pontos: dict[str, dict[str, tuple[int, int]]] = field(default_factory=dict)
 
     @property
     def n_quadros(self) -> int:
@@ -89,10 +90,13 @@ def exportar_pet(pet: Pet, saida: Path, escala: int = 8, previews: bool = True) 
     quadros: list[Image.Image] = []
     duracoes: list[int] = []
     tags: dict[str, tuple[int, int]] = {}
+    pontos: dict[str, dict[str, tuple[int, int]]] = {}
 
     for nome, gerar in ANIMACOES.items():
         inicio = len(quadros)
-        for pose in gerar(pet):
+        poses = gerar(pet)
+        pontos[nome] = pet.pontos(poses[0])
+        for pose in poses:
             quadros.append(renderizar(pet, pose, cores))
             duracoes.append(pose.duracao)
         tags[nome] = (inicio, len(quadros) - 1)
@@ -124,12 +128,14 @@ def exportar_pet(pet: Pet, saida: Path, escala: int = 8, previews: bool = True) 
             "frameTags": [
                 {"name": n, "from": a, "to": b, "direction": "forward"} for n, (a, b) in tags.items()
             ],
+            # Pontos de referência (1º quadro de cada animação), em pixels do quadro.
+            "pontos": pontos,
         },
     }
     png.with_suffix(".json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
 
     if not previews:
-        return Resultado(pet, png, quadros, duracoes, tags)
+        return Resultado(pet, png, quadros, duracoes, tags, pontos)
     _folha_de_quadros(quadros, tags, saida / "preview" / f"{pet.id}_quadros.png")
     for nome, (a, b) in tags.items():
         _salvar_gif(
@@ -137,7 +143,7 @@ def exportar_pet(pet: Pet, saida: Path, escala: int = 8, previews: bool = True) 
             duracoes[a : b + 1],
             saida / "preview" / f"{pet.id}_{nome}.gif",
         )
-    return Resultado(pet, png, quadros, duracoes, tags)
+    return Resultado(pet, png, quadros, duracoes, tags, pontos)
 
 
 def _quadro_no_tempo(r: Resultado, a: int, b: int, t: int) -> Image.Image:

@@ -5,6 +5,7 @@
 @orelha_dir 18 3
 @olho_esq 4 7
 @boca 9 19
+@simbolo 9 -11
 @olho_dir 14 7
 .......OOOOOOOOOO.......
 .....OOTTTTFFTTTTOO.....

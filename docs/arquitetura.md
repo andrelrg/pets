@@ -91,16 +91,31 @@ substituem os gerados.
 |---|---|
 | `idle` | Estado padrão |
 | `falando` | Durante uma fala (boca animada) |
-| `alerta` | Erro / problema / notificação importante |
-| `feliz` | Sucesso / boa notícia |
-| `pensando` | Tarefa em andamento |
-| `curioso` | Esperando input / pergunta |
-| `dormindo` | Ocioso por muito tempo |
+| `alerta` | Reação a erro / aviso / pendência / deploy |
+| `feliz` | Reação a sucesso / marco |
+| `pensando` | Reação a progresso; fundo do pet de progresso enquanto há tarefa ativa |
+| `curioso` | Reação a info; outros pets olham quando alguém dá alerta |
+| `dormindo` | Ocioso por muito tempo (sem eventos) |
 
 As integrações (scripts, CI, hooks) só usam nomes de **eventos**. O motor
 traduz cada evento na animação certa de cada pet, então qualquer pet funciona
 com qualquer integração. Animações em `extras` são opcionais e ligadas a
 gatilhos.
+
+## Cenas (vários pets)
+
+Uma **cena** é uma coreografia entre pets numa linha do tempo: cada passo diz
+qual animação um pet toca, por quanto tempo e para onde ele se desloca na tela.
+Os papéis são escolhidos pela personalidade, então a cena funciona com
+qualquer par de pets.
+
+- **carinho** (enquanto todos dormem): o pet com mais `energia` acorda, vai aos
+  pulinhos até o de mais `carinho`, fica em pé atrás dele e lambe a ponta da
+  orelha (o outro fica `deitado_feliz`, com corações), depois volta e dorme.
+  O alvo é calculado pelos pontos de referência exportados no JSON (`boca` do
+  ativo → `orelha` do passivo).
+
+Qualquer evento interrompe a cena.
 
 ## Eventos → animação + fala
 

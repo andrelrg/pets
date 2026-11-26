@@ -33,13 +33,17 @@ def _misturar(a: str, b: str, t: float) -> tuple[int, int, int]:
 class Pose:
     """Estado de um quadro de animação."""
 
-    olhos: str = "aberto"        # aberto | meio | desconfiado | fechado
+    olhos: str = "aberto"        # aberto | meio | desconfiado | fechado | feliz
     olhar: tuple[int, int] = (0, 0)  # deslocamento da íris (x, y); x<0 = para a esquerda
     orelha_esq: str = "normal"   # lado esquerdo de quem olha
     orelha_dir: str = "normal"
     rabo: str | None = "a"
     dy_cabeca: int = 0
-    boca: str | None = None      # None = fechada | "lingua"
+    boca: str | None = None      # None = fechada | lingua | aberta | entreaberta
+    dy: int = 0                  # deslocamento vertical do pet inteiro (pulinho)
+    dx_cabeca: int = 0           # cabeça para o lado (inclinação/curiosidade)
+    simbolo: str | None = None   # exclamacao | interrogacao | pontos1-3 | z1 | z2 | coracao(_sobe1-3)
+    postura: str = "sentado"     # sentado | deitado | em_pe (nas patas de trás)
     duracao: int = 200  # ms
 
 
@@ -77,10 +81,14 @@ class Pet:
         ap = self.config["aparencia"]
         b = self.biblioteca
         self.partes["corpo"] = b.parte("corpo", ap.get("corpo", "medio"))
+        self.partes["corpo_deitado"] = b.parte("corpo", ap.get("corpo", "medio") + "_deitado")
+        em_pe = ap.get("corpo", "medio") + "_em_pe"
+        self.partes["corpo_em_pe"] = b.parte("corpo", em_pe) if b.existe("corpo", em_pe) else self.partes["corpo"]
         self.partes["cabeca"] = b.parte("cabeca", ap.get("focinho", "medio"))
         self.partes["olho"] = b.parte("olho", ap.get("olhos", "aberto"))
         self.partes["rabo"] = b.parte("rabo", ap.get("rabo", "padrao"))
         self.partes["boca"] = b.parte("boca", ap.get("boca", "padrao"))
+        self.partes["simbolo"] = b.parte("simbolo", "padrao")
 
         tipo_orelha = ap.get("orelhas", "em_pe")
         orelha = b.parte("orelha", tipo_orelha)
@@ -129,6 +137,33 @@ class Pet:
 
     # --- composição ---------------------------------------------------------
 
+    def _corpo(self, pose: Pose) -> Parte:
+        return self.partes[{"deitado": "corpo_deitado", "em_pe": "corpo_em_pe"}.get(pose.postura, "corpo")]
+
+    def _origens(self, pose: Pose) -> tuple[int, int, int, int]:
+        """Canto superior esquerdo do corpo (cx, cy) e da cabeça (hx, hy) no quadro."""
+        corpo = self._corpo(pose)
+        cabeca = self.partes["cabeca"]
+        cx = (TAMANHO - corpo.largura) // 2
+        cy = TAMANHO - corpo.altura + pose.dy
+        px, py = corpo.ancoras["pescoco"]
+        qx, qy = cabeca.ancoras["queixo"]
+        return cx, cy, cx + px - qx + pose.dx_cabeca, cy + py - qy + pose.dy_cabeca
+
+    def pontos(self, pose: Pose) -> dict[str, tuple[int, int]]:
+        """Pontos de referência no quadro (para cenas: onde está a boca, as orelhas...)."""
+        _, _, hx, hy = self._origens(pose)
+        cab = self.partes["cabeca"]
+        bx, by = cab.ancoras.get("boca", (cab.largura // 2 - 3, cab.altura - 3))
+        ox, oy = cab.ancoras["orelha_esq"]
+        dx, dy = cab.ancoras["orelha_dir"]
+        return {
+            "cabeca": (hx + cab.largura // 2, hy + cab.altura // 2),
+            "boca": (hx + bx + 3, hy + by + 1),
+            "orelha_esq": (hx + ox, hy + oy),
+            "orelha_dir": (hx + dx, hy + dy),
+        }
+
     def compor(self, pose: Pose) -> list[list[str]]:
         """Compõe as camadas numa grade de regiões (TAMANHO x TAMANHO)."""
         tela = [[TRANSPARENTE] * TAMANHO for _ in range(TAMANHO)]
@@ -139,13 +174,9 @@ class Pet:
                     if ch != TRANSPARENTE and 0 <= x + i < TAMANHO and 0 <= y + j < TAMANHO:
                         tela[y + j][x + i] = ch
 
-        corpo, cabeca, olho = self.partes["corpo"], self.partes["cabeca"], self.partes["olho"]
-        cx = (TAMANHO - corpo.largura) // 2
-        cy = TAMANHO - corpo.altura
-
-        px, py = corpo.ancoras["pescoco"]
-        qx, qy = cabeca.ancoras["queixo"]
-        hx, hy = cx + px - qx, cy + py - qy + pose.dy_cabeca
+        corpo = self._corpo(pose)
+        cabeca, olho = self.partes["cabeca"], self.partes["olho"]
+        cx, cy, hx, hy = self._origens(pose)
 
         # Ordem das camadas: rabo, orelhas, corpo, cabeça, olhos.
         if pose.rabo:
@@ -165,6 +196,10 @@ class Pet:
         if pose.boca:
             bx, by = cabeca.ancoras["boca"]
             carimbar(self.partes["boca"], pose.boca, hx + bx, hy + by)
+
+        if pose.simbolo:
+            sx, sy = cabeca.ancoras.get("simbolo", (-10, -10))
+            carimbar(self.partes["simbolo"], pose.simbolo, hx + sx, hy + sy)
 
         for lado in ("esq", "dir"):
             ox, oy = cabeca.ancoras[f"olho_{lado}"]

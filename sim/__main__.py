@@ -8,6 +8,8 @@ Uso (na raiz do repositório):
 Enquanto roda, aceita eventos por HTTP (ver sim/enviar.py):
     python -m sim.enviar erro "3 testes falharam"
 
+    python -m sim --dormir 5 --carinho 3 6   # ver logo a cena de carinho
+
 Teclas: 1 erro · 2 aviso · 3 sucesso · 4 progresso · 5 pendente · 6 marco ·
         7 deploy · 0 os dois falam · S salva captura em build/sim.png · Esc sai
 """
@@ -44,6 +46,9 @@ def main() -> None:
     ap.add_argument("--porta", type=int, default=8765)
     ap.add_argument("--demo", action="store_true", help="dispara eventos de exemplo")
     ap.add_argument("--mudo", action="store_true", help="sem bipes")
+    ap.add_argument("--dormir", type=float, default=120, help="segundos sem eventos até os pets dormirem")
+    ap.add_argument("--carinho", type=float, nargs=2, default=(25, 50), metavar=("MIN", "MAX"),
+                    help="intervalo (s) entre as cenas de carinho enquanto dormem")
     args = ap.parse_args()
 
     pygame.init()
@@ -52,7 +57,8 @@ def main() -> None:
     pets = carregar_pets(args.pets)
     if not pets:
         raise SystemExit("Nenhum pet encontrado em pets/.")
-    sim = Simulador(pets, args.largura, args.altura, som=not args.mudo)
+    sim = Simulador(pets, args.largura, args.altura, som=not args.mudo, dormir_s=args.dormir,
+                    intervalo_carinho_s=tuple(args.carinho))
 
     try:
         servidor.iniciar(sim.entrada, [p.id for p in pets], args.porta)

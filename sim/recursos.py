@@ -52,6 +52,7 @@ class PetSim:
     falas: dict[str, list[str]]
     animacoes: dict[str, Animacao] = field(default_factory=dict)
     caixa: pygame.Rect = field(default_factory=lambda: pygame.Rect(0, 0, 48, 48))  # área usada do quadro
+    pontos: dict[str, dict[str, tuple[int, int]]] = field(default_factory=dict)  # por animação
 
     @property
     def papel(self) -> str:
@@ -92,11 +93,13 @@ def carregar_pets(ids: list[str] | None = None) -> list[PetSim]:
         if (pasta / "falas.toml").exists():
             with open(pasta / "falas.toml", "rb") as f:
                 falas = tomllib.load(f).get("falas", {})
-        pet = PetSim(id=gen.id, nome=gen.nome, config=gen.config, falas=falas)
+        pet = PetSim(id=gen.id, nome=gen.nome, config=gen.config, falas=falas, pontos=r.pontos)
         superficies = [_para_surface(q) for q in r.quadros]
         for nome, (a, b) in r.tags.items():
             pet.animacoes[nome] = Animacao(superficies[a : b + 1], r.duracoes[a : b + 1])
-        caixas = [q.get_bounding_rect() for q in superficies]
+        # Área usada medida só no idle: símbolos e pulinhos podem passar dela.
+        a, b = r.tags["idle"]
+        caixas = [q.get_bounding_rect() for q in superficies[a : b + 1]]
         pet.caixa = caixas[0].unionall(caixas[1:])
         pets.append(pet)
     return pets

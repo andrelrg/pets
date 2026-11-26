@@ -33,6 +33,14 @@ Saídas em `build/`:
 | `preview/<id>_quadros.png` | todos os quadros ampliados, para revisão |
 | `preview/todos.gif` | todos os pets lado a lado |
 
+Animações geradas para todo pet: `idle`, `falando`, `alerta`, `feliz`,
+`pensando`, `curioso` e `dormindo` (deitado), além das usadas em cenas:
+`acordando_esq/dir`, `andando`, `lambendo_esq/dir` (em pé nas patas de trás) e
+`deitado_feliz`. O JSON também traz **pontos de referência** de cada animação
+(boca, cabeça, orelhas) para coreografar cenas entre pets. A personalidade do `pet.toml` muda o ritmo e
+os detalhes (ex.: pets desconfiados olham de canto; carinhosos mostram coração e
+língua quando felizes).
+
 ## Simulador
 
 ```bash
@@ -62,6 +70,19 @@ curl -X POST http://127.0.0.1:8765/evento -d '{"evento":"pendente","detalhe":"re
 | `valor` | (só `progresso`) 0–100, mostra a barra no painel |
 | `silencioso` | `true` = só atualiza o painel, sem fala (bom para progresso frequente) |
 
+Cada evento tem uma **reação** antes da fala: `alerta` (pulo + "!") para
+erro/aviso/pendente/deploy, `feliz` para sucesso/marco, `pensando` para
+progresso e `curioso` para info. Enquanto há uma tarefa em andamento, o pet de
+progresso fica `pensando`; sem eventos por um tempo (`--dormir`, padrão 120s),
+os pets `dormem`.
+
+Enquanto dormem, de tempos em tempos acontece uma **cena de carinho**: o pet
+mais enérgico acorda, vai até o mais carinhoso, lambe a orelha dele (que fica
+feliz, com corações) e volta a dormir. Qualquer evento interrompe a cena.
+Para ver logo: `python -m sim --dormir 5 --carinho 3 6`.
+
+<p align="center"><img src="docs/img/cena_carinho.gif" alt="Cena de carinho: Simba lambe a orelha da Nala enquanto dormem" width="320"></p>
+
 Quando ninguém está falando, a parte de cima da tela vira um **painel**: relógio,
 tarefa em andamento com barra de progresso e o último evento. O layout se
 adapta ao tamanho da tela (`--largura`/`--altura`): os pets usam a maior escala
@@ -86,6 +107,7 @@ legenda em `art/templates/cachorro/legenda.toml`). Contribuições são bem-vind
 ```
 pets/<id>/      pacote de cada pet (pet.toml, falas, overrides, extras)
 art/templates/  templates base da pixel art (partes em camadas, em texto)
+art/fontes/     fonte pixel 5x7 (texto editável; acentos montados automaticamente)
 sim/            simulador no PC (pygame-ce) + API HTTP de eventos
 firmware/       firmware do microcontrolador (PlatformIO + LovyanGFX)
 tools/          gerador de sprites a partir do pet.toml + conversores (→ C)
