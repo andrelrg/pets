@@ -39,3 +39,5 @@ velocidade = 0.9
 id = "van_nala"
 descricao = "Fundo vira céu em redemoinhos estilo Van Gogh; pose de retrato."
 gatilho = "marco"
+estilo = "retrato"
+fundo = "noite_estrelada"

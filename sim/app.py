@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 
 import pygame
 
+from . import fundos
 from .fonte import FontePixel
 from .recursos import PetSim
 from .voz import Voz
@@ -115,6 +116,23 @@ def _suave(x: float) -> float:
 
 
 @dataclass
+class Especial:
+    """Animação especial em andamento (extras do pet.toml): fundo próprio, só o pet em cena."""
+    pet: str
+    animacao: str
+    fundo: "fundos.Fundo | None"
+    t: int = 0
+
+    @property
+    def falando(self) -> str:
+        return f"{self.animacao}_falando"
+
+    @property
+    def loop(self) -> str:
+        return f"{self.animacao}_loop"
+
+
+@dataclass
 class Tarefa:
     nome: str
     valor: float | None  # 0-100, ou None se indeterminado
@@ -146,6 +164,7 @@ class Simulador:
         self.ocioso = 0       # ms sem nenhum evento
         self.reagindo = 0     # ms restantes da reação antes da fala começar
         self.cena: Cena | None = None
+        self.especial: Especial | None = None
         self.intervalo_carinho = intervalo_carinho_s
         self.ate_carinho = self._sortear_carinho()
         self._montar_layout()
@@ -248,6 +267,7 @@ class Simulador:
             self.estados[self.atual.pet.id].tocar(self.estado_base(self.atual.pet))
         self.atual = None
         self.reagindo = 0
+        self.especial = None
 
     # --- cenas --------------------------------------------------------------
 
@@ -326,11 +346,31 @@ class Simulador:
             return "pensando"
         return "idle"
 
+    def _extra(self, pet: PetSim, evento: str) -> dict | None:
+        """Animação especial do pet disparada por este evento, se houver."""
+        for x in pet.config.get("extras", []):
+            nome = f"extra_{x.get('id')}"
+            if x.get("gatilho") == evento and {nome, f"{nome}_falando", f"{nome}_loop"} <= set(pet.animacoes):
+                return x
+        return None
+
+    def _anim_falando(self) -> str:
+        return self.especial.falando if self.especial else "falando"
+
     def _iniciar_fala(self, fala: Fala) -> None:
         self.atual = fala
         self.pagina, self.mostrados, self.espera = 0, 0.0, 0
+        self.especial = None
         est = self.estados[fala.pet.id]
         reacao = REACAO.get(fala.evento)
+        extra = self._extra(fala.pet, fala.evento)
+        if extra:
+            nome = f"extra_{extra['id']}"
+            fundo = fundos.criar(extra.get("fundo"), self.w, self.h, self.escala, CHAO_ALTURA)
+            self.especial = Especial(fala.pet.id, nome, fundo)
+            est.tocar(nome)
+            self.reagindo = min(fala.pet.animacoes[nome].total, 4000)
+            return
         if reacao and reacao in fala.pet.animacoes:
             est.tocar(reacao)
             self.reagindo = min(fala.pet.animacoes[reacao].total, 1800)
@@ -381,10 +421,12 @@ class Simulador:
 
         if self.atual is None:
             return
+        if self.especial:
+            self.especial.t += dt
         if self.reagindo > 0:
             self.reagindo -= dt
             if self.reagindo <= 0:
-                self.estados[falante].tocar("falando")
+                self.estados[falante].tocar(self._anim_falando())
             return
 
         texto = " ".join(self.atual.paginas[self.pagina])
@@ -397,13 +439,14 @@ class Simulador:
                 if ch.isalnum() and i % 2 == 0 and self.voz:
                     self.voz.silaba(voz["tom"], enfase=ch.isupper())
             if self.mostrados >= len(texto):
-                self.estados[self.atual.pet.id].tocar(self.estado_base(self.atual.pet))
+                fim = self.especial.loop if self.especial else self.estado_base(self.atual.pet)
+                self.estados[self.atual.pet.id].tocar(fim)
         else:
             self.espera += dt
             if self.espera >= 1400 + 35 * len(texto):
                 if self.pagina + 1 < len(self.atual.paginas):
                     self.pagina, self.mostrados, self.espera = self.pagina + 1, 0.0, 0
-                    self.estados[self.atual.pet.id].tocar("falando")
+                    self.estados[self.atual.pet.id].tocar(self._anim_falando())
                 else:
                     self._encerrar_fala()
 
@@ -411,20 +454,27 @@ class Simulador:
 
     def desenhar(self) -> pygame.Surface:
         t = self.tela
-        t.fill(FUNDO)
-        pygame.draw.rect(t, CHAO, (0, self.h - CHAO_ALTURA, self.w, CHAO_ALTURA))
+        esp = self.especial
+        if esp and esp.fundo:
+            esp.fundo.desenhar(t, esp.t)
+        else:
+            t.fill(FUNDO)
+            pygame.draw.rect(t, CHAO, (0, self.h - CHAO_ALTURA, self.w, CHAO_ALTURA))
 
         e = self.escala
         ordem = sorted(self.pets, key=lambda p: bool(self.cena and self.cena.frente == p.id))
         for pet in ordem:
+            if esp and pet.id != esp.pet:
+                continue  # momento especial: só o pet dele em cena, centralizado
             est = self.estados[pet.id]
             q = pet.animacao(est.animacao).quadro(est.t)
             x, y = self.posicoes[pet.id]
-            t.blit(pygame.transform.scale(q, (q.get_width() * e, q.get_height() * e)), (x + round(est.dx), y + round(est.dy)))
+            dx = self.w // 2 - self.centro_pet(pet) if esp else round(est.dx)
+            t.blit(pygame.transform.scale(q, (q.get_width() * e, q.get_height() * e)), (x + dx, y + round(est.dy)))
 
         if self.atual and self.reagindo <= 0:
             self._desenhar_balao()
-        else:
+        elif not esp:
             self._desenhar_painel()
         return t
 

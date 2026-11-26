@@ -18,7 +18,6 @@ pets/
     pet.toml          # características: porte, pelagem, orelhas, olhos, personalidade
     falas.toml        # frases por evento, no tom do pet (opcional, há padrões)
     overrides/        # (opcional) sprites desenhados à mão que substituem os gerados
-    extras/           # (opcional) animações exclusivas (ex.: astronauta)
   nala/
     ...
 ```
@@ -56,9 +55,12 @@ papel = "progresso"         # alerta | progresso | ambos
 tom = 0.8                   # altura dos bipes de fala
 velocidade = 0.9
 
-[[extras]]
+[[extras]]                  # animação especial (opcional, pode haver várias)
 id = "van_nala"
-gatilho = "marco"           # evento que dispara essa animação especial
+gatilho = "marco"           # evento que dispara essa animação
+estilo = "retrato"          # flutuando | retrato
+acessorio = "capacete"      # (opcional) template em acessorio/, desenhado sobre a cabeça
+fundo = "noite_estrelada"   # espaco | noite_estrelada (desenhados pelo simulador)
 ```
 
 ## Etapa de configuração/geração
@@ -99,8 +101,25 @@ substituem os gerados.
 
 As integrações (scripts, CI, hooks) só usam nomes de **eventos**. O motor
 traduz cada evento na animação certa de cada pet, então qualquer pet funciona
-com qualquer integração. Animações em `extras` são opcionais e ligadas a
-gatilhos.
+com qualquer integração.
+
+### Animações especiais (`[[extras]]`)
+
+Cada extra gera três animações: `extra_<id>` (entrada e reação),
+`extra_<id>_falando` e `extra_<id>_loop` (depois da fala). Quando chega um
+evento igual ao `gatilho`, elas substituem a reação e a fala normais. O fundo
+da tela vira o `fundo` do extra e só aquele pet fica em cena, centralizado.
+O JSON exportado lista os extras em `meta.extras`.
+
+| Estilo | O que faz |
+|---|---|
+| `flutuando` | O acessório desce na cabeça e o pet flutua (gravidade zero) |
+| `retrato` | Pose de três quartos, altiva, como num quadro |
+
+| Fundo | O que mostra |
+|---|---|
+| `espaco` | Estrelas cintilando, planeta com anel, estrela cadente e a Terra |
+| `noite_estrelada` | Céu em redemoinhos, lua, cipreste, colinas e moldura dourada |
 
 ## Cenas (vários pets)
 

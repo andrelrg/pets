@@ -23,6 +23,9 @@ X = "olho (íris/pupila)"
 Y = "brilho do olho"
 Z = "branco do olho"
 R = "língua / boca"
+G = "vidro (acessórios)"
+H = "metal (acessórios)"
+V = "luz (acessórios)"
 
 # Regiões com cor fixa, independentes do padrão.
 [fixas]
@@ -32,6 +35,9 @@ X = "olhos"
 Y = "brilho"
 Z = "esclera"
 R = "lingua"
+G = "vidro"
+H = "metal"
+V = "luz"
 
 # Padrões de pelagem: região -> papel de cor (base | marca | claro).
 [padroes.mascara]           # branco com máscara colorida no rosto e orelhas

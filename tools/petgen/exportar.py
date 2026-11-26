@@ -9,7 +9,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-from .animacoes import ANIMACOES
+from .animacoes import animacoes_do_pet
 from .pet import TAMANHO, Pet, Pose
 
 FUNDO = (32, 34, 58)
@@ -92,9 +92,8 @@ def exportar_pet(pet: Pet, saida: Path, escala: int = 8, previews: bool = True) 
     tags: dict[str, tuple[int, int]] = {}
     pontos: dict[str, dict[str, tuple[int, int]]] = {}
 
-    for nome, gerar in ANIMACOES.items():
+    for nome, poses in animacoes_do_pet(pet).items():
         inicio = len(quadros)
-        poses = gerar(pet)
         pontos[nome] = pet.pontos(poses[0])
         for pose in poses:
             quadros.append(renderizar(pet, pose, cores))
@@ -130,6 +129,12 @@ def exportar_pet(pet: Pet, saida: Path, escala: int = 8, previews: bool = True) 
             ],
             # Pontos de referência (1º quadro de cada animação), em pixels do quadro.
             "pontos": pontos,
+            # Animações especiais: evento que dispara, animações e fundo de tela.
+            "extras": [
+                {"id": x["id"], "gatilho": x.get("gatilho"), "fundo": x.get("fundo"),
+                 "animacao": f"extra_{x['id']}"}
+                for x in pet.config.get("extras", []) if f"extra_{x['id']}" in tags
+            ],
         },
     }
     png.with_suffix(".json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")

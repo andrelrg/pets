@@ -206,6 +206,74 @@ def deitado_feliz(pet: Pet) -> list[Pose]:
     ]
 
 
+# --- animações especiais (extras do pet.toml) ---------------------------------
+#
+# Cada extra vira três animações: extra_<id> (entrada + reação),
+# extra_<id>_falando (durante a fala) e extra_<id>_loop (depois da fala).
+# O estilo decide a coreografia; o simulador desenha o fundo.
+
+def _flutuando(pet: Pet, extra: dict) -> dict[str, list[Pose]]:
+    """Gravidade zero: o acessório (capacete) desce e o pet sai flutuando."""
+    ac = extra.get("acessorio")
+    olhos = _base_olhos(pet)
+    onda = [-2, -3, -4, -4, -3, -2, -1, -1]
+
+    def flutua(i: int, **extra_pose) -> Pose:
+        base = {"olhos": "aberto", "dy": onda[i % len(onda)], "acessorio": ac, "rabo": "ab"[(i // 2) % 2],
+                "duracao": 160, **extra_pose}
+        return Pose(**base)
+
+    entrada = [
+        Pose(olhos="aberto", olhar=(0, -1), acessorio=ac, dy_acessorio=-6, rabo="a", duracao=160),
+        Pose(olhos="aberto", olhar=(0, -1), acessorio=ac, dy_acessorio=-4, rabo="a", duracao=110),
+        Pose(olhos="aberto", olhar=(0, -1), acessorio=ac, dy_acessorio=-2, rabo="a", duracao=90),
+        Pose(olhos="fechado", acessorio=ac, dy_acessorio=1, dy_cabeca=1, rabo="a", duracao=110),  # tum!
+        Pose(olhos="aberto", acessorio=ac, rabo="a", duracao=300),
+        Pose(olhos="feliz", acessorio=ac, boca="aberta", dy=-1, rabo="b", duracao=200),
+    ]
+    entrada += [flutua(i, olhar=((-1, 0), (0, -1), (1, 0), (0, 0))[i // 4 % 4]) for i in range(12)]
+    falando_ = [flutua(i, olhos=olhos, boca=("aberta", "entreaberta", None, "aberta", None, "entreaberta")[i % 6],
+                       duracao=120) for i in range(24)]
+    loop = [flutua(i, olhar=((-1, 0), (0, 0), (1, 0), (0, -1))[i // 4 % 4]) for i in range(16)]
+    return {"": entrada, "_falando": falando_, "_loop": loop}
+
+
+def _retrato(pet: Pet, extra: dict) -> dict[str, list[Pose]]:
+    """Pose de retrato: perfil altivo de três quartos, como num quadro."""
+    ac = extra.get("acessorio")
+    pose = {"dx_cabeca": -1, "acessorio": ac, "rabo": None}
+    entrada = [
+        Pose(olhos="aberto", olhar=(-1, 0), duracao=900, **pose),
+        Pose(olhos="fechado", olhar=(-1, 0), duracao=140, **pose),
+        Pose(olhos="aberto", olhar=(-1, 0), duracao=500, **pose),
+        Pose(olhos="aberto", olhar=(0, 0), duracao=400, **pose),
+        Pose(olhos="feliz", boca="lingua", simbolo="coracao", duracao=700, **pose),
+    ]
+    falando_ = [Pose(olhos="aberto", boca=b, dy_cabeca=1 if b == "aberta" else 0, duracao=120, **pose)
+                for b in ("aberta", "entreaberta", None, "aberta", None, "entreaberta")]
+    loop = [
+        Pose(olhos="aberto", olhar=(-1, 0), dy_cabeca=0, duracao=1200, **pose),
+        Pose(olhos="aberto", olhar=(-1, 0), dy_cabeca=1, duracao=1200, **pose),
+        Pose(olhos="fechado", olhar=(-1, 0), duracao=130, **pose),
+        Pose(olhos="feliz", boca="lingua", duracao=900, **pose),
+    ]
+    return {"": entrada, "_falando": falando_, "_loop": loop}
+
+
+ESTILOS = {"flutuando": _flutuando, "retrato": _retrato}
+
+
+def animacoes_do_pet(pet: Pet) -> dict[str, list[Pose]]:
+    """Todas as animações do pet: as base + as especiais declaradas em [[extras]]."""
+    todas = {nome: gerar(pet) for nome, gerar in ANIMACOES.items()}
+    for extra in pet.config.get("extras", []):
+        estilo = ESTILOS.get(extra.get("estilo", ""))
+        if estilo:
+            for sufixo, poses in estilo(pet, extra).items():
+                todas[f"extra_{extra['id']}{sufixo}"] = poses
+    return todas
+
+
 ANIMACOES = {
     "idle": idle,
     "falando": falando,

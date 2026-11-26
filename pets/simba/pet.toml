@@ -35,5 +35,8 @@ velocidade = 1.15             # fala rápida e curta
 
 [[extras]]
 id = "astronauta"
-descricao = "Capacete de astronauta desce do topo; fundo de estrelas."
+descricao = "Capacete de astronauta desce na cabeça e ele flutua no espaço."
 gatilho = "deploy"
+estilo = "flutuando"     # flutuando | retrato
+acessorio = "capacete"   # art/templates/<especie>/acessorio/
+fundo = "espaco"         # espaco | noite_estrelada

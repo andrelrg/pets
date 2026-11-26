@@ -15,6 +15,9 @@ CORES_FIXAS = {
     "brilho": "#ffffff",
     "esclera": "#efe9df",
     "lingua": "#e2788a",
+    "vidro": "#a9dcf2",
+    "metal": "#c3c7d4",
+    "luz": "#ff5d5d",
 }
 COR_SOMBRA = "#2a2040"  # sombra puxada para o roxo (hue shift clássico)
 
@@ -44,6 +47,8 @@ class Pose:
     dx_cabeca: int = 0           # cabeça para o lado (inclinação/curiosidade)
     simbolo: str | None = None   # exclamacao | interrogacao | pontos1-3 | z1 | z2 | coracao(_sobe1-3)
     postura: str = "sentado"     # sentado | deitado | em_pe (nas patas de trás)
+    acessorio: str | None = None # template em acessorio/ (ex.: capacete), por cima de tudo
+    dy_acessorio: int = 0        # acessório chegando (ex.: capacete descendo)
     duracao: int = 200  # ms
 
 
@@ -208,6 +213,14 @@ class Pet:
                 for i, ch in enumerate(linha):
                     if ch != TRANSPARENTE:
                         tela[hy + oy + j][hx + ox + i] = ch
+
+        if pose.acessorio:
+            chave = f"acessorio_{pose.acessorio}"
+            if chave not in self.partes:
+                self.partes[chave] = self.biblioteca.parte("acessorio", pose.acessorio)
+            ac = self.partes[chave]
+            ax, ay = ac.ancoras.get("centro", (ac.largura // 2, ac.altura // 2))
+            carimbar(ac, "normal", hx + cabeca.largura // 2 - ax, hy + cabeca.altura // 2 - ay + pose.dy_acessorio)
         return tela
 
 

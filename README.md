@@ -76,6 +76,13 @@ progresso e `curioso` para info. Enquanto há uma tarefa em andamento, o pet de
 progresso fica `pensando`; sem eventos por um tempo (`--dormir`, padrão 120s),
 os pets `dormem`.
 
+Cada pet pode ter **animações especiais** ligadas a um evento. No `deploy`, o
+Simba ganha o capacete de astronauta e flutua no espaço. Num `marco`, a Nala
+vira a *Van Nala* e posa num quadro de céu em redemoinhos. Durante esse
+momento, o fundo muda e só o pet do momento aparece na tela.
+
+<p align="center"><img src="docs/img/especiais.gif" alt="Simba astronauta no espaço e Van Nala num céu estrelado" width="320"></p>
+
 Enquanto dormem, de tempos em tempos acontece uma **cena de carinho**: o pet
 mais enérgico acorda, vai até o mais carinhoso, lambe a orelha dele (que fica
 feliz, com corações) e volta a dormir. Qualquer evento interrompe a cena.
