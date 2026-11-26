@@ -38,19 +38,21 @@ TEXTO = (26, 18, 22)
 COR_EVENTO = {
     "erro": (230, 90, 90), "aviso": (235, 180, 80), "pendente": (235, 180, 80),
     "sucesso": (120, 200, 140), "marco": (120, 200, 140), "deploy": (130, 170, 240),
+    "parado": (235, 180, 80),
 }
+AMARELO = (235, 180, 80)
 DIAS = ["seg", "ter", "qua", "qui", "sex", "sáb", "dom"]
 
 # Evento -> papel do pet que responde quando pet = "auto".
 PAPEL_DO_EVENTO = {
-    "erro": "alerta", "aviso": "alerta", "pendente": "alerta", "deploy": "alerta",
+    "erro": "alerta", "aviso": "alerta", "pendente": "alerta", "deploy": "alerta", "parado": "alerta",
     "sucesso": "progresso", "progresso": "progresso", "marco": "progresso", "info": "progresso",
 }
 PRIORIDADE = {"baixa": 0, "normal": 1, "alta": 2}
 
 # Reação (animação) antes da fala, por evento.
 REACAO = {
-    "erro": "alerta", "aviso": "alerta", "pendente": "alerta", "deploy": "alerta",
+    "erro": "alerta", "aviso": "alerta", "pendente": "alerta", "deploy": "alerta", "parado": "alerta",
     "sucesso": "feliz", "marco": "feliz", "progresso": "pensando", "info": "curioso",
 }
 
@@ -74,8 +76,9 @@ class EstadoPet:
     animacao: str = "idle"
     t: int = 0              # ms desde o início da animação atual
     ate: int | None = None  # animação temporária: ms até voltar ao estado base
-    dx: float = 0.0         # deslocamento na tela (cenas)
+    dx: float = 0.0         # deslocamento na tela (cenas, abrir espaço)
     dy: float = 0.0
+    dx_alvo: float = 0.0    # para onde o dx vai, suavemente (fora das cenas)
 
     def tocar(self, nome: str, por: int | None = None) -> None:
         if nome != self.animacao:
@@ -136,13 +139,21 @@ class Especial:
 class Tarefa:
     nome: str
     valor: float | None  # 0-100, ou None se indeterminado
-    concluida_em: float | None = None
+    atualizada_em: int = 0              # ms (relógio do simulador) do último progresso
+    limite_ms: int = 600_000            # sem progresso por mais que isso -> alerta "parado"
+    concluida_em: int | None = None
+    parada: bool = False                # alerta de "sem progresso" já foi dado
+
+    @property
+    def ativa(self) -> bool:
+        return self.concluida_em is None
 
 
 class Simulador:
     def __init__(self, pets: list[PetSim], largura: int = 240, altura: int = 240, som: bool = True,
                  relogio=time.localtime, dormir_s: float = 120,
-                 intervalo_carinho_s: tuple[float, float] = (25, 50)):
+                 intervalo_carinho_s: tuple[float, float] = (25, 50), parado_s: float = 600,
+                 intervalo_barriga_s: tuple[float, float] = (40, 90)):
         self.pets = pets
         self.w, self.h = largura, altura
         self.tela = pygame.Surface((largura, altura))
@@ -167,6 +178,14 @@ class Simulador:
         self.especial: Especial | None = None
         self.intervalo_carinho = intervalo_carinho_s
         self.ate_carinho = self._sortear_carinho()
+        self.agora = 0                      # ms desde o início (relógio do simulador)
+        self.parado_ms = int(parado_s * 1000)
+        self.intervalo_barriga = intervalo_barriga_s
+        self.ate_barriga = self._sortear(intervalo_barriga_s)
+        self.anim_fala = "falando"          # animação durante a digitação
+        self.anim_pos_fala: str | None = None  # depois do texto, até a fala acabar
+        self.espremidos: dict[str, int] = {}  # id -> lado de quem se esparramou (-1 esq, 1 dir)
+        self._caixas: dict[tuple[str, str], pygame.Rect] = {}
         self._montar_layout()
 
     # --- layout -------------------------------------------------------------
@@ -223,11 +242,23 @@ class Simulador:
         if evento == "progresso":
             valor = ev.get("valor")
             valor = max(0.0, min(100.0, float(valor))) if valor is not None else None
-            self.tarefa = Tarefa(ev.get("tarefa") or detalhe or "tarefa", valor)
+            limite = ev.get("limite")
+            self.tarefa = Tarefa(ev.get("tarefa") or detalhe or "tarefa", valor, self.agora,
+                                 int(float(limite) * 1000) if limite else self.parado_ms)
             if valor is not None and valor >= 100:
-                self.tarefa.concluida_em = time.monotonic()
-        elif evento == "sucesso" and self.tarefa and self.tarefa.valor is not None:
-            self.tarefa.valor, self.tarefa.concluida_em = 100.0, time.monotonic()
+                # 100% = conclusão: vira um "sucesso" (comemora e fala, se não for silencioso).
+                self.tarefa.concluida_em = self.agora
+                ev = {**ev, "evento": "sucesso", "detalhe": self.tarefa.nome}
+                evento, detalhe = "sucesso", self.tarefa.nome
+                if ev.get("silencioso"):
+                    for pet in self._destinatarios(ev):
+                        reacao = self._reacao(pet, "sucesso")
+                        if reacao:
+                            self.estados[pet.id].tocar(reacao, por=3000)
+        elif evento == "sucesso" and self.tarefa and self.tarefa.ativa:
+            if self.tarefa.valor is not None:
+                self.tarefa.valor = 100.0
+            self.tarefa.concluida_em = self.agora
         if evento != "progresso" or not ev.get("silencioso"):
             self.ultimo = (evento, detalhe, hora)
         if ev.get("silencioso"):
@@ -269,10 +300,52 @@ class Simulador:
         self.reagindo = 0
         self.especial = None
 
+    # --- espaço na tela -----------------------------------------------------
+
+    ESPARRAMADOS = ("barriga", "barriga_falando")
+
+    def _caixa(self, pet: PetSim, animacao: str) -> pygame.Rect:
+        """Área ocupada (em pixels do quadro) por todos os quadros de uma animação."""
+        chave = (pet.id, animacao)
+        if chave not in self._caixas:
+            rects = [pygame.mask.from_surface(q).get_bounding_rects() for q in pet.animacao(animacao).quadros]
+            todos = [r for lista in rects for r in lista]
+            self._caixas[chave] = todos[0].unionall(todos[1:]) if todos else pet.caixa.copy()
+        return self._caixas[chave]
+
+    def _abrir_espaco(self, em_cena: set[str]) -> None:
+        """Quem se esparrama (de barriga) ocupa mais espaço: o vizinho do lado se afasta."""
+        e = self.escala
+        ordem = sorted(self.pets, key=self.centro_pet)
+        alvos = {p.id: 0.0 for p in ordem}
+        self.espremidos = {}
+        for i, pet in enumerate(ordem):
+            est = self.estados[pet.id]
+            if est.animacao not in self.ESPARRAMADOS or pet.id in em_cena or i + 1 >= len(ordem):
+                continue
+            vizinho = ordem[i + 1]
+            if vizinho.id in em_cena:
+                continue
+            x, _ = self.posicoes[pet.id]
+            vx, _ = self.posicoes[vizinho.id]
+            ocupa = x + round(est.dx) + self._caixa(pet, est.animacao).right * e
+            precisa = ocupa + 3 * e - (vx + vizinho.caixa.left * e)
+            limite = self.w - MARGEM - (vx + vizinho.caixa.right * e)  # sem sair da tela
+            if precisa > 0:
+                alvos[vizinho.id] = max(0.0, min(precisa, limite))
+                self.espremidos[vizinho.id] = -1  # quem se esparramou está à esquerda
+        for pid, alvo in alvos.items():
+            if pid not in em_cena:
+                self.estados[pid].dx_alvo = alvo
+
     # --- cenas --------------------------------------------------------------
 
     def _sortear_carinho(self) -> int:
-        return int(random.uniform(*self.intervalo_carinho) * 1000)
+        return self._sortear(self.intervalo_carinho)
+
+    @staticmethod
+    def _sortear(intervalo: tuple[float, float]) -> int:
+        return int(random.uniform(*intervalo) * 1000)
 
     def cena_carinho(self) -> Cena | None:
         """Enquanto dormem: o pet mais enérgico acorda, vai até o mais carinhoso,
@@ -314,7 +387,7 @@ class Simulador:
         if self.cena:
             for pid in self.cena.pets:
                 est = self.estados[pid]
-                est.dx = est.dy = 0.0
+                est.dx = est.dy = est.dx_alvo = 0.0
                 est.tocar(self.estado_base(est.pet))
         self.cena = None
 
@@ -341,7 +414,16 @@ class Simulador:
         """Animação de fundo: dormindo (ocioso), pensando (tarefa em andamento) ou idle."""
         if self.ocioso >= self.dormir_ms:
             return "dormindo"
-        tarefa_ativa = self.tarefa is not None and self.tarefa.concluida_em is None
+        lado = self.espremidos.get(pet.id)
+        if lado is not None:
+            # Alguém se esparramou do lado: vai pulando para longe e fica olhando, incomodado.
+            est = self.estados[pet.id]
+            if abs(est.dx - est.dx_alvo) > self.escala:
+                return "andando"
+            nome = f"incomodado_{'esq' if lado < 0 else 'dir'}"
+            if nome in pet.animacoes:
+                return nome
+        tarefa_ativa = self.tarefa is not None and self.tarefa.ativa and not self.tarefa.parada
         if tarefa_ativa and pet.papel in ("progresso", "ambos"):
             return "pensando"
         return "idle"
@@ -355,23 +437,33 @@ class Simulador:
         return None
 
     def _anim_falando(self) -> str:
-        return self.especial.falando if self.especial else "falando"
+        return self.anim_fala
+
+    def _reacao(self, pet: PetSim, evento: str) -> str | None:
+        """Reação do pet ao evento: a do pet.toml ([reacoes]) ou a padrão."""
+        nome = pet.config.get("reacoes", {}).get(evento) or REACAO.get(evento)
+        return nome if nome in pet.animacoes else None
 
     def _iniciar_fala(self, fala: Fala) -> None:
         self.atual = fala
         self.pagina, self.mostrados, self.espera = 0, 0.0, 0
         self.especial = None
+        self.anim_fala, self.anim_pos_fala = "falando", None
         est = self.estados[fala.pet.id]
-        reacao = REACAO.get(fala.evento)
+        reacao = self._reacao(fala.pet, fala.evento)
         extra = self._extra(fala.pet, fala.evento)
         if extra:
             nome = f"extra_{extra['id']}"
             fundo = fundos.criar(extra.get("fundo"), self.w, self.h, self.escala, CHAO_ALTURA)
             self.especial = Especial(fala.pet.id, nome, fundo)
+            self.anim_fala, self.anim_pos_fala = self.especial.falando, self.especial.loop
             est.tocar(nome)
             self.reagindo = min(fala.pet.animacoes[nome].total, 4000)
             return
-        if reacao and reacao in fala.pet.animacoes:
+        if reacao:
+            # Reações com variante "_falando" (ex.: barriga) continuam na pose durante a fala.
+            if f"{reacao}_falando" in fala.pet.animacoes:
+                self.anim_fala, self.anim_pos_fala = f"{reacao}_falando", reacao
             est.tocar(reacao)
             self.reagindo = min(fala.pet.animacoes[reacao].total, 1800)
         else:
@@ -389,8 +481,15 @@ class Simulador:
         while not self.entrada.empty():
             self.processar(self.entrada.get())
 
-        if self.tarefa and self.tarefa.concluida_em and time.monotonic() - self.tarefa.concluida_em > 8:
+        self.agora += dt
+        tf = self.tarefa
+        if tf and tf.concluida_em is not None and self.agora - tf.concluida_em > 10_000:
             self.tarefa = None
+        elif tf and tf.ativa and not tf.parada and self.agora - tf.atualizada_em > tf.limite_ms:
+            # Muito tempo sem progresso: o pet de alerta avisa (uma vez por tarefa parada).
+            tf.parada = True
+            minutos = max(1, round((self.agora - tf.atualizada_em) / 60_000))
+            self.processar({"evento": "parado", "detalhe": f"{tf.nome}, {minutos} min sem progresso"})
         if self.atual is None and not self.fila:
             self.ocioso += dt
 
@@ -406,12 +505,27 @@ class Simulador:
         if self.atual is None and self.fila:
             self._iniciar_fala(self.fila.pop(0))
 
+        # Pets bem carinhosos, à toa, de vez em quando deitam de barriga pra cima.
+        if self.atual is None and not self.cena:
+            self.ate_barriga -= dt
+            if self.ate_barriga <= 0:
+                self.ate_barriga = self._sortear(self.intervalo_barriga)
+                for pet in self.pets:
+                    est = self.estados[pet.id]
+                    carinho = pet.config.get("personalidade", {}).get("carinho", 0.5)
+                    if carinho >= 0.9 and "barriga" in pet.animacoes and est.animacao == "idle":
+                        est.tocar("barriga", por=pet.animacoes["barriga"].total * 2)
+
         falante = self.atual.pet.id if self.atual else None
         em_cena = self.cena.pets if self.cena else set()
+        self._abrir_espaco(em_cena)
         for e in self.estados.values():
             e.t += dt
             if e.pet.id in em_cena:
                 continue
+            if e.dx != e.dx_alvo:  # desliza até o alvo (ex.: abrindo espaço)
+                passo = (e.dx_alvo - e.dx) * min(1.0, dt / 220)
+                e.dx = e.dx_alvo if abs(e.dx_alvo - e.dx) < 0.5 else e.dx + passo
             if e.ate is not None:
                 e.ate -= dt
                 if e.ate <= 0:
@@ -439,7 +553,7 @@ class Simulador:
                 if ch.isalnum() and i % 2 == 0 and self.voz:
                     self.voz.silaba(voz["tom"], enfase=ch.isupper())
             if self.mostrados >= len(texto):
-                fim = self.especial.loop if self.especial else self.estado_base(self.atual.pet)
+                fim = self.anim_pos_fala or self.estado_base(self.atual.pet)
                 self.estados[self.atual.pet.id].tocar(fim)
         else:
             self.espera += dt
@@ -506,19 +620,26 @@ class Simulador:
         if self.tarefa and y + f.altura_maiuscula + 11 <= limite:
             tf = self.tarefa
             valor = tf.valor
-            rotulo = "ok!" if tf.concluida_em else (f"{valor:.0f}%" if valor is not None else "…")
-            rr = self._texto(f, rotulo, PAINEL_TEXTO, x + w, y, direita=True)
+            if not tf.ativa:
+                rotulo, cor_rotulo, cor_barra = "concluída!", BARRA, BARRA
+                valor = 100.0
+            elif tf.parada:
+                rotulo, cor_rotulo, cor_barra = "parada", AMARELO, AMARELO
+            else:
+                rotulo = f"{valor:.0f}%" if valor is not None else "…"
+                cor_rotulo, cor_barra = PAINEL_TEXTO, BARRA
+            rr = self._texto(f, rotulo, cor_rotulo, x + w, y, direita=True)
             self._texto(f, self._cortar(f, tf.nome, w - rr.w - 8), PAINEL_TEXTO, x, y)
             y += f.altura_maiuscula + 4
             pygame.draw.rect(self.tela, PAINEL, (x, y, w, 7), border_radius=2)
             if valor is not None:
                 cheio = round((w - 2) * valor / 100)
                 if cheio:
-                    pygame.draw.rect(self.tela, BARRA, (x + 1, y + 1, cheio, 5), border_radius=2)
+                    pygame.draw.rect(self.tela, cor_barra, (x + 1, y + 1, cheio, 5), border_radius=2)
             else:  # indeterminado: bloco que corre pela barra
                 pos = (pygame.time.get_ticks() // 12) % (w + 30) - 30
                 bloco = pygame.Rect(x + 1 + pos, y + 1, 30, 5).clip(pygame.Rect(x + 1, y + 1, w - 2, 5))
-                pygame.draw.rect(self.tela, BARRA, bloco, border_radius=2)
+                pygame.draw.rect(self.tela, cor_barra, bloco, border_radius=2)
             y += 7 + 6
 
         if self.ultimo and y + f.altura_maiuscula <= limite:

@@ -1,0 +1,46 @@
+# Deitada de lado mostrando a barriga, pata de trás pro alto (pedindo carinho).
+# A cabeça fica à esquerda, apoiada no chão, e o corpo se estica para a direita:
+# o compositor alinha este corpo à direita do quadro. 40x20. Gerado por script; editável.
+@pescoco 7 16
+=== normal
+..................................OOOOO.
+.................................OPPPPPO
+.................................OPPPPPO
+..................................OLLLlO
+.................OOOOOOOOOOOOOOO.OLLLlO.
+...............OOdddddddddddddddOLLLlO..
+.............OODDDDDDDDDDDDDDDDDDLLLlO..
+............ODDDDDDDDDDDDDDDDDDDLLLlO...
+...........ODDDDDDDDDDDDDDDDDDDLLLlDDOOO
+..........OCCCCCCCCCCCCCCCCCCCCLLLlCCCQQ
+.........OCCCCCCCCCCCCCCCCCCCCCCCCCCCCCQ
+.........OCCCCCCCCCCCCCCCCRCCCCCCCCCCCCO
+.........OCCCCCCOOOOOOOOCCCCCCCCCCCCCCCO
+.........OCCCCCCOLLLPPPOCCCCCCRCCCCCCCCO
+..........OCCCCCOLLLPPPOCCRCCCCCOOOOOOOO
+...........OCCCCOLLLPPPOCCCCCCCCOLLPPPOO
+............OCCCOOOOOOOOCCCCCCCCOLLPPPOO
+.............OOCCCCCCCCCCCCCCCCCOLLPPPOO
+...............OOcccccccccccccccOOOOOOOO
+.................OOOOOOOOOOOOOOOOOOOOOO.
+=== chuta
+..................................OPPPPP
+..................................OPPPPP
+...................................OOOOO
+...................................OLLLl
+.................OOOOOOOOOOOOOOO..OLLLlO
+...............OOdddddddddddddddOOLLLlO.
+.............OODDDDDDDDDDDDDDDDDDLLLlO.O
+............ODDDDDDDDDDDDDDDDDDDLLLlO.OQ
+...........ODDDDDDDDDDDDDDDDDDDLLLlDDOOQ
+..........OCCCCCCCCCCCCCCCCCCCCLLLlCCCQO
+.........OCCCCCCCCCCCCCCCCCCCCCCCCCCCCCO
+.........OCCCCCCCCCCCCCCCCRCCCCCCCCCCCCO
+.........OCCCCCCOOOOOOOOCCCCCCCCCCCCCCCO
+.........OCCCCCCOLLLPPPOCCCCCCRCCCCCCCCO
+..........OCCCCCOLLLPPPOCCRCCCCCOOOOOOOO
+...........OCCCCOLLLPPPOCCCCCCCCOLLPPPOO
+............OCCCOOOOOOOOCCCCCCCCOLLPPPOO
+.............OOCCCCCCCCCCCCCCCCCOLLPPPOO
+...............OOcccccccccccccccOOOOOOOO
+.................OOOOOOOOOOOOOOOOOOOOOO.

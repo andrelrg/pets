@@ -45,15 +45,16 @@ começar simples e manter o caminho até o microcontrolador sempre aberto.
   stdin — assim qualquer coisa (scripts, CI, hooks do git, etc.) consegue
   acionar os mascotes.
 
-**Fase 2 — Hardware (`firmware/`)**:
+**Fase 2 — Hardware (`firmware/`)**: arquitetura, ligações e lista de compras em
+[`hardware.md`](hardware.md). Resumo:
 
 | Item | Sugestão inicial |
 |---|---|
-| Placa | **ESP32-S3** (PSRAM, Wi-Fi, USB nativo) — ESP32 comum também serve |
-| Tela | TFT **ST7789 240×240** (quadrada) ou **ILI9341/ST7789 320×240** (2,4"–2,8", paisagem: mais espaço para pets + painel). O simulador adapta o layout a qualquer tamanho (`--largura`/`--altura`). Telas redondas (GC9A01) desperdiçam os cantos; OLED 128×64 é monocromático. |
+| Placa | **ESP32 DevKit V1** (já temos), com renderização em cores indexadas por não ter PSRAM. Se um dia faltar memória: ESP32-S3 N16R8 |
+| Tela | **TFT IPS 2,8" 320×240 SPI** (ST7789 ou ILI9341), em paisagem, com mais espaço para pets e painel. O simulador adapta o layout a qualquer tamanho (`--largura`/`--altura`). Telas redondas (GC9A01) desperdiçam os cantos, e OLED 128×64 é monocromático. |
 | Build | **PlatformIO** + framework Arduino |
 | Gráficos | **LovyanGFX** (rápido, sprites/DMA, suporta as telas acima) |
-| Áudio (opcional) | Buzzer piezo ou I2S (MAX98357A) para os bipes |
+| Áudio | I2S (MAX98357A) + alto-falante 8 Ω para os bipes |
 | Comunicação | Mesmo protocolo JSON do simulador, via **Serial USB** primeiro, depois **Wi-Fi (HTTP ou MQTT)** |
 
 Os sprites vão para o firmware como arrays C (`RGB565` ou indexados por

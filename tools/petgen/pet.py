@@ -46,7 +46,8 @@ class Pose:
     dy: int = 0                  # deslocamento vertical do pet inteiro (pulinho)
     dx_cabeca: int = 0           # cabeça para o lado (inclinação/curiosidade)
     simbolo: str | None = None   # exclamacao | interrogacao | pontos1-3 | z1 | z2 | coracao(_sobe1-3)
-    postura: str = "sentado"     # sentado | deitado | em_pe (nas patas de trás)
+    postura: str = "sentado"     # sentado | deitado | em_pe (nas patas de trás) | barriga (de lado)
+    quadro_corpo: str = "normal" # quadro do template de corpo (ex.: "chuta" na barriga)
     acessorio: str | None = None # template em acessorio/ (ex.: capacete), por cima de tudo
     dy_acessorio: int = 0        # acessório chegando (ex.: capacete descendo)
     duracao: int = 200  # ms
@@ -89,6 +90,9 @@ class Pet:
         self.partes["corpo_deitado"] = b.parte("corpo", ap.get("corpo", "medio") + "_deitado")
         em_pe = ap.get("corpo", "medio") + "_em_pe"
         self.partes["corpo_em_pe"] = b.parte("corpo", em_pe) if b.existe("corpo", em_pe) else self.partes["corpo"]
+        barriga = ap.get("corpo", "medio") + "_barriga"
+        if b.existe("corpo", barriga):  # opcional: só gera a animação "barriga" se existir
+            self.partes["corpo_barriga"] = b.parte("corpo", barriga)
         self.partes["cabeca"] = b.parte("cabeca", ap.get("focinho", "medio"))
         self.partes["olho"] = b.parte("olho", ap.get("olhos", "aberto"))
         self.partes["rabo"] = b.parte("rabo", ap.get("rabo", "padrao"))
@@ -143,16 +147,24 @@ class Pet:
     # --- composição ---------------------------------------------------------
 
     def _corpo(self, pose: Pose) -> Parte:
-        return self.partes[{"deitado": "corpo_deitado", "em_pe": "corpo_em_pe"}.get(pose.postura, "corpo")]
+        nome = {"deitado": "corpo_deitado", "em_pe": "corpo_em_pe", "barriga": "corpo_barriga"}.get(pose.postura, "corpo")
+        return self.partes.get(nome) or self.partes["corpo_deitado"]
 
     def _origens(self, pose: Pose) -> tuple[int, int, int, int]:
-        """Canto superior esquerdo do corpo (cx, cy) e da cabeça (hx, hy) no quadro."""
+        """Canto superior esquerdo do corpo (cx, cy) e da cabeça (hx, hy) no quadro.
+
+        De barriga (deitado de lado) o corpo se estica para a direita: fica
+        alinhado à direita do quadro, com a cabeça à esquerda.
+        """
         corpo = self._corpo(pose)
         cabeca = self.partes["cabeca"]
-        cx = (TAMANHO - corpo.largura) // 2
-        cy = TAMANHO - corpo.altura + pose.dy
         px, py = corpo.ancoras["pescoco"]
         qx, qy = cabeca.ancoras["queixo"]
+        if pose.postura == "barriga" and "corpo_barriga" in self.partes:
+            cx = TAMANHO - corpo.largura - 1
+        else:
+            cx = (TAMANHO - corpo.largura) // 2
+        cy = TAMANHO - corpo.altura + pose.dy
         return cx, cy, cx + px - qx + pose.dx_cabeca, cy + py - qy + pose.dy_cabeca
 
     def pontos(self, pose: Pose) -> dict[str, tuple[int, int]]:
@@ -171,48 +183,23 @@ class Pet:
 
     def compor(self, pose: Pose) -> list[list[str]]:
         """Compõe as camadas numa grade de regiões (TAMANHO x TAMANHO)."""
-        tela = [[TRANSPARENTE] * TAMANHO for _ in range(TAMANHO)]
-
-        def carimbar(parte: Parte, quadro: str, x: int, y: int) -> None:
-            for j, linha in enumerate(parte.quadro(quadro)):
-                for i, ch in enumerate(linha):
-                    if ch != TRANSPARENTE and 0 <= x + i < TAMANHO and 0 <= y + j < TAMANHO:
-                        tela[y + j][x + i] = ch
-
+        tela = _grade()
         corpo = self._corpo(pose)
-        cabeca, olho = self.partes["cabeca"], self.partes["olho"]
+        cabeca = self.partes["cabeca"]
         cx, cy, hx, hy = self._origens(pose)
 
-        # Ordem das camadas: rabo, orelhas, corpo, cabeça, olhos.
-        if pose.rabo:
+        # Ordem das camadas: rabo, orelhas, corpo, cabeça, boca, olhos, acessório, símbolo.
+        if pose.rabo and "rabo" in corpo.ancoras:
             rabo = self.partes["rabo"]
             rx, ry = corpo.ancoras["rabo"]
             bx, by = rabo.ancoras["base"]
-            carimbar(rabo, pose.rabo, cx + rx - bx, cy + ry - by)
+            _carimbar(tela, rabo.quadro(pose.rabo), cx + rx - bx, cy + ry - by)
 
-        for lado, estado in (("esq", pose.orelha_esq), ("dir", pose.orelha_dir)):
-            orelha = self.partes[f"orelha_{lado}"]
-            ax, ay = cabeca.ancoras[f"orelha_{lado}"]
-            bx, by = orelha.ancoras["base"]
-            carimbar(orelha, estado, hx + ax - bx, hy + ay - by)
-
-        carimbar(corpo, "normal", cx, cy)
-        carimbar(cabeca, "normal", hx, hy)
-        if pose.boca:
-            bx, by = cabeca.ancoras["boca"]
-            carimbar(self.partes["boca"], pose.boca, hx + bx, hy + by)
-
-        if pose.simbolo:
-            sx, sy = cabeca.ancoras.get("simbolo", (-10, -10))
-            carimbar(self.partes["simbolo"], pose.simbolo, hx + sx, hy + sy)
-
-        for lado in ("esq", "dir"):
-            ox, oy = cabeca.ancoras[f"olho_{lado}"]
-            grade = compor_olho(olho, pose.olhos, pose.olhar, espelhar=(lado == "dir"))
-            for j, linha in enumerate(grade):
-                for i, ch in enumerate(linha):
-                    if ch != TRANSPARENTE:
-                        tela[hy + oy + j][hx + ox + i] = ch
+        camada = _grade()
+        self._compor_cabeca(camada, pose, hx, hy, so_orelhas=True)
+        _carimbar(tela, ["".join(l) for l in camada], 0, 0)
+        _carimbar(tela, corpo.quadro(pose.quadro_corpo), cx, cy)
+        self._compor_cabeca(tela, pose, hx, hy, sem_orelhas=True)
 
         if pose.acessorio:
             chave = f"acessorio_{pose.acessorio}"
@@ -220,8 +207,45 @@ class Pet:
                 self.partes[chave] = self.biblioteca.parte("acessorio", pose.acessorio)
             ac = self.partes[chave]
             ax, ay = ac.ancoras.get("centro", (ac.largura // 2, ac.altura // 2))
-            carimbar(ac, "normal", hx + cabeca.largura // 2 - ax, hy + cabeca.altura // 2 - ay + pose.dy_acessorio)
+            _carimbar(tela, ac.quadro("normal"), hx + cabeca.largura // 2 - ax,
+                      hy + cabeca.altura // 2 - ay + pose.dy_acessorio)
+
+        if pose.simbolo:
+            sx, sy = cabeca.ancoras.get("simbolo", (-10, -10))
+            _carimbar(tela, self.partes["simbolo"].quadro(pose.simbolo), hx + sx, hy + sy)
         return tela
+
+    def _compor_cabeca(self, tela, pose: Pose, hx: int, hy: int,
+                       so_orelhas: bool = False, sem_orelhas: bool = False) -> None:
+        """Orelhas, cabeça, boca e olhos com o canto da cabeça em (hx, hy)."""
+        cabeca, olho = self.partes["cabeca"], self.partes["olho"]
+        if not sem_orelhas:
+            for lado, estado in (("esq", pose.orelha_esq), ("dir", pose.orelha_dir)):
+                orelha = self.partes[f"orelha_{lado}"]
+                ax, ay = cabeca.ancoras[f"orelha_{lado}"]
+                bx, by = orelha.ancoras["base"]
+                _carimbar(tela, orelha.quadro(estado), hx + ax - bx, hy + ay - by)
+        if so_orelhas:
+            return
+        _carimbar(tela, cabeca.quadro("normal"), hx, hy)
+        if pose.boca:
+            bx, by = cabeca.ancoras["boca"]
+            _carimbar(tela, self.partes["boca"].quadro(pose.boca), hx + bx, hy + by)
+        for lado in ("esq", "dir"):
+            ox, oy = cabeca.ancoras[f"olho_{lado}"]
+            grade = compor_olho(olho, pose.olhos, pose.olhar, espelhar=(lado == "dir"))
+            _carimbar(tela, grade, hx + ox, hy + oy)
+
+
+def _grade() -> list[list[str]]:
+    return [[TRANSPARENTE] * TAMANHO for _ in range(TAMANHO)]
+
+
+def _carimbar(tela: list[list[str]], linhas: list[str], x: int, y: int) -> None:
+    for j, linha in enumerate(linhas):
+        for i, ch in enumerate(linha):
+            if ch != TRANSPARENTE and 0 <= x + i < TAMANHO and 0 <= y + j < TAMANHO:
+                tela[y + j][x + i] = ch
 
 
 def compor_olho(olho: Parte, estado: str, olhar: tuple[int, int], espelhar: bool) -> list[str]:

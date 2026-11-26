@@ -51,6 +51,9 @@ energia = 0.3               # 0 = calma, 1 = elétrica — afeta velocidade do i
 desconfianca = 0.1          # afeta pálpebras / olhar lateral
 papel = "progresso"         # alerta | progresso | ambos
 
+[reacoes]                   # (opcional) evento -> animação, no lugar da reação padrão
+sucesso = "barriga"         # se existir "<animação>_falando", o pet fala sem sair da pose
+
 [voz]
 tom = 0.8                   # altura dos bipes de fala
 velocidade = 0.9
@@ -98,6 +101,8 @@ substituem os gerados.
 | `pensando` | Reação a progresso; fundo do pet de progresso enquanto há tarefa ativa |
 | `curioso` | Reação a info; outros pets olham quando alguém dá alerta |
 | `dormindo` | Ocioso por muito tempo (sem eventos) |
+| `barriga` | (opcional, se o corpo tiver o template `_barriga`) deitado de lado mostrando a barriga; pets com `carinho` alto fazem no idle. O corpo se estica para a direita e o vizinho abre espaço |
+| `incomodado_esq/dir` | Quando alguém se esparrama do lado: olhar de canto, orelha em pé, revira os olhos |
 
 As integrações (scripts, CI, hooks) só usam nomes de **eventos**. O motor
 traduz cada evento na animação certa de cada pet, então qualquer pet funciona

@@ -23,6 +23,7 @@ FALAS_PADRAO = {
     "marco": ["Uhul! {detalhe}!"],
     "deploy": ["Deploy: {detalhe}."],
     "info": ["{detalhe}"],
+    "parado": ["Parou? {detalhe}."],
 }
 
 

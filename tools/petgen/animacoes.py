@@ -206,6 +206,42 @@ def deitado_feliz(pet: Pet) -> list[Pose]:
     ]
 
 
+def _barriga_poses(pet: Pet, bocas: list[str | None], duracao: int, coracao: bool) -> list[Pose]:
+    a = {"olhos": "feliz", "orelha_esq": "baixa", "orelha_dir": "baixa", "postura": "barriga"}
+    seq = []
+    for i, boca in enumerate(bocas):
+        simbolo = ("coracao_sobe1", "coracao_sobe2", "coracao_sobe3", None)[i % 4] if coracao else None
+        seq.append(Pose(boca=boca, quadro_corpo=("normal", "chuta")[i % 2], rabo="ab"[i % 2],
+                        dy_cabeca=i % 2, simbolo=simbolo, duracao=duracao, **a))
+    return seq
+
+
+def _incomodado(pet: Pet, lado: int) -> list[Pose]:
+    """Espremido por alguém que se esparramou do lado: olhar de canto, orelha em pé, suspiro."""
+    orelha = "alerta" if pet.config["aparencia"].get("orelhas") == "semi_caidas" else "baixa"
+    o = {"orelha_esq": orelha} if lado < 0 else {"orelha_dir": orelha}
+    return [
+        Pose(olhos="desconfiado", olhar=(lado, 0), dx_cabeca=lado, rabo="a", duracao=900, **o),
+        Pose(olhos="fechado", olhar=(lado, 0), dx_cabeca=lado, rabo="a", duracao=110, **o),
+        Pose(olhos="desconfiado", olhar=(lado, 0), dx_cabeca=lado, rabo="a", duracao=700, **o),
+        Pose(olhos="meio", olhar=(0, -1), rabo="a", simbolo="pontos3", duracao=600),   # revira os olhos
+        Pose(olhos="desconfiado", olhar=(lado, 0), dx_cabeca=lado, rabo="a", duracao=800, **o),
+    ]
+
+
+def barriga(pet: Pet) -> list[Pose]:
+    """Deitada de lado mostrando a barriga, pata pro alto balançando, língua e corações: pedindo carinho."""
+    seq = _barriga_poses(pet, ["lingua"] * 8, 200, coracao=True)
+    seq.insert(4, Pose(olhos="fechado", orelha_esq="baixa", orelha_dir="baixa", postura="barriga", boca="lingua",
+                       rabo="a", duracao=150))
+    return seq
+
+
+def barriga_falando(pet: Pet) -> list[Pose]:
+    """Falando sem sair da pose de barriga."""
+    return _barriga_poses(pet, ["aberta", "entreaberta", None, "aberta", None, "entreaberta"], 120, coracao=False)
+
+
 # --- animações especiais (extras do pet.toml) ---------------------------------
 #
 # Cada extra vira três animações: extra_<id> (entrada + reação),
@@ -266,6 +302,9 @@ ESTILOS = {"flutuando": _flutuando, "retrato": _retrato}
 def animacoes_do_pet(pet: Pet) -> dict[str, list[Pose]]:
     """Todas as animações do pet: as base + as especiais declaradas em [[extras]]."""
     todas = {nome: gerar(pet) for nome, gerar in ANIMACOES.items()}
+    if "corpo_barriga" in pet.partes:
+        todas["barriga"] = barriga(pet)
+        todas["barriga_falando"] = barriga_falando(pet)
     for extra in pet.config.get("extras", []):
         estilo = ESTILOS.get(extra.get("estilo", ""))
         if estilo:
@@ -289,4 +328,6 @@ ANIMACOES = {
     "lambendo_esq": lambda pet: _lambendo(pet, -1),
     "lambendo_dir": lambda pet: _lambendo(pet, 1),
     "deitado_feliz": deitado_feliz,
+    "incomodado_esq": lambda pet: _incomodado(pet, -1),
+    "incomodado_dir": lambda pet: _incomodado(pet, 1),
 }

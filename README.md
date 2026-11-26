@@ -13,7 +13,8 @@ animações são gerados.
 <p align="center"><img src="docs/img/preview.gif" alt="Nala e Simba em pixel art, animação idle" width="512"></p>
 
 > Projeto em construção. Veja [`docs/arquitetura.md`](docs/arquitetura.md) e
-> [`docs/tecnologias.md`](docs/tecnologias.md).
+> [`docs/tecnologias.md`](docs/tecnologias.md). Para montar o aparelho:
+> [`docs/hardware.md`](docs/hardware.md) (arquitetura, ligações e lista de compras).
 
 ## Gerando os sprites
 
@@ -55,6 +56,21 @@ python -m sim.enviar sucesso "build ok"            # Nala (papel: progresso) com
 python -m sim.enviar aviso "disco cheio" --prioridade alta   # interrompe a fala atual
 ```
 
+Tarefas com progresso aparecem no painel, com barra:
+
+```bash
+python -m sim.enviar progresso "migração" --valor 60 --silencioso   # atualiza a barra, sem fala
+python -m sim.enviar progresso "migração" --valor 100               # concluída: Nala comemora
+python -m sim.enviar sucesso "migração"                             # também conclui a tarefa
+```
+
+Uma tarefa fica **concluída** com `valor` 100 ou com um evento `sucesso`. O painel
+mostra "concluída!" em verde por 10 s e a Nala comemora (com `--silencioso`, só a
+animação, sem fala). Se a tarefa passar muito tempo **sem progresso** (padrão
+10 min; `--limite` no evento ou `--parado` no simulador), o painel mostra
+"parada" em amarelo e o Simba dá o alerta (evento `parado`). Um novo progresso
+retoma a tarefa.
+
 Ou por HTTP, de qualquer linguagem:
 
 ```bash
@@ -63,16 +79,21 @@ curl -X POST http://127.0.0.1:8765/evento -d '{"evento":"pendente","detalhe":"re
 
 | Campo | Valores |
 |---|---|
-| `evento` | `erro`, `aviso`, `pendente`, `deploy`, `sucesso`, `progresso`, `marco`, `info` |
+| `evento` | `erro`, `aviso`, `pendente`, `deploy`, `sucesso`, `progresso`, `marco`, `info` (e `parado`, gerado pelo próprio sistema) |
 | `detalhe` | texto que entra na fala (`{detalhe}` em `falas.toml`) |
 | `pet` | `auto` (escolhe pelo papel), `ambos` ou o id do pet |
 | `prioridade` | `baixa`, `normal`, `alta` (alta interrompe a fala atual) |
-| `valor` | (só `progresso`) 0–100, mostra a barra no painel |
+| `valor` | (só `progresso`) 0–100, mostra a barra no painel; 100 conclui a tarefa |
+| `limite` | (só `progresso`) segundos sem novo progresso até o alerta de tarefa parada |
 | `silencioso` | `true` = só atualiza o painel, sem fala (bom para progresso frequente) |
 
 Cada evento tem uma **reação** antes da fala: `alerta` (pulo + "!") para
 erro/aviso/pendente/deploy, `feliz` para sucesso/marco, `pensando` para
-progresso e `curioso` para info. Enquanto há uma tarefa em andamento, o pet de
+progresso e `curioso` para info. Cada pet pode trocar as suas em `[reacoes]` no
+`pet.toml`: a Nala, no sucesso, deita de lado **mostrando a barriga** com a pata
+pro alto, pedindo carinho (e fala sem sair da pose). À toa, de vez em quando ela
+também se esparrama (`--barriga MIN MAX`). Como ela ocupa mais espaço deitada, o
+vizinho (o Simba) vai pro lado, meio incomodado, e volta quando ela levanta. Enquanto há uma tarefa em andamento, o pet de
 progresso fica `pensando`; sem eventos por um tempo (`--dormir`, padrão 120s),
 os pets `dormem`.
 

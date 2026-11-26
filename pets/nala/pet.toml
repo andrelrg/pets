@@ -35,6 +35,10 @@ papel = "progresso"           # reporta andamento, sucesso; consola nos erros
 tom = 0.85
 velocidade = 0.9
 
+# Reações próprias (evento -> animação), no lugar das padrão.
+[reacoes]
+sucesso = "barriga"   # deita de barriga pra cima pedindo carinho
+
 [[extras]]
 id = "van_nala"
 descricao = "Fundo vira céu em redemoinhos estilo Van Gogh; pose de retrato."

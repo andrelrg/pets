@@ -9,6 +9,8 @@ Enquanto roda, aceita eventos por HTTP (ver sim/enviar.py):
     python -m sim.enviar erro "3 testes falharam"
 
     python -m sim --dormir 5 --carinho 3 6   # ver logo a cena de carinho
+    python -m sim --barriga 3 5              # Nala de barriga pra cima logo
+    python -m sim --parado 20                # alerta após 20 s sem progresso
 
 Teclas: 1 erro · 2 aviso · 3 sucesso · 4 progresso · 5 pendente · 6 marco ·
         7 deploy · 0 os dois falam · S salva captura em build/sim.png · Esc sai
@@ -49,6 +51,10 @@ def main() -> None:
     ap.add_argument("--dormir", type=float, default=120, help="segundos sem eventos até os pets dormirem")
     ap.add_argument("--carinho", type=float, nargs=2, default=(25, 50), metavar=("MIN", "MAX"),
                     help="intervalo (s) entre as cenas de carinho enquanto dormem")
+    ap.add_argument("--barriga", type=float, nargs=2, default=(40, 90), metavar=("MIN", "MAX"),
+                    help="intervalo (s) entre as vezes em que pets carinhosos mostram a barriga")
+    ap.add_argument("--parado", type=float, default=600,
+                    help="segundos sem progresso até a tarefa ser dada como parada (alerta)")
     args = ap.parse_args()
 
     pygame.init()
@@ -58,7 +64,8 @@ def main() -> None:
     if not pets:
         raise SystemExit("Nenhum pet encontrado em pets/.")
     sim = Simulador(pets, args.largura, args.altura, som=not args.mudo, dormir_s=args.dormir,
-                    intervalo_carinho_s=tuple(args.carinho))
+                    intervalo_carinho_s=tuple(args.carinho), parado_s=args.parado,
+                    intervalo_barriga_s=tuple(args.barriga))
 
     try:
         servidor.iniciar(sim.entrada, [p.id for p in pets], args.porta)
