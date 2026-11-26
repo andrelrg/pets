@@ -1,0 +1,40 @@
+# ============================================================
+# PRIVACIDADE: fotos e referências pessoais NUNCA vão pro repo.
+# Coloque fotos dos cachorros em reference/ (ou na raiz).
+# ============================================================
+reference/
+/*.jpg
+/*.jpeg
+/*.png
+/*.heic
+/*.heif
+/*.webp
+/*.gif
+/*.bmp
+/*.tif
+/*.tiff
+*.jpg
+*.jpeg
+*.heic
+*.heif
+*.mov
+*.mp4
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# PlatformIO
+.pio/
+.vscode/
+
+# OS / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Segredos (Wi-Fi, tokens etc.)
+.env
+secrets.h
