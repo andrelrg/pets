@@ -1,0 +1,8 @@
+# {detalhe} é substituído pelo detalhe do evento.
+[falas]
+erro      = ["Eu sabia. {detalhe}.", "Tem coisa errada aqui: {detalhe}!", "Alerta! {detalhe}."]
+aviso     = ["Hm... {detalhe}. Tô de olho.", "Não gostei disso: {detalhe}."]
+sucesso   = ["Passou? ...Hm. Vou ficar de olho.", "Ok. Dessa vez passou."]
+progresso = ["{detalhe}. Anda logo.", "Ainda em {detalhe}..."]
+pendente  = ["Ei! Falta {detalhe}.", "Não esquece: {detalhe}. Eu tô vendo."]
+deploy    = ["Simba Astronauta, decolando!", "Contagem regressiva... {detalhe}!"]

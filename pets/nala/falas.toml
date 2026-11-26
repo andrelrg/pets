@@ -1,0 +1,8 @@
+# {detalhe} é substituído pelo detalhe do evento.
+[falas]
+erro      = ["Ih, {detalhe}... mas tudo bem, a gente arruma.", "Calma, foi só {detalhe}."]
+aviso     = ["Psiu... {detalhe}.", "Dá uma olhadinha: {detalhe}."]
+sucesso   = ["Deu certo! Carinho na barriga?", "Prontinho! {detalhe}."]
+progresso = ["Indo bem: {detalhe}.", "Tô acompanhando... {detalhe}."]
+pendente  = ["Lembra de {detalhe}?", "Quando der, {detalhe}."]
+marco     = ["Isso merece um quadro! {detalhe}.", "Van Nala aprova: {detalhe}!"]

@@ -18,6 +18,11 @@ começar simples e manter o caminho até o microcontrolador sempre aberto.
 
 ## 1. Arte (8-bit)
 
+> Os sprites de cada pet são **gerados** a partir do `pet.toml`, usando
+> templates em camadas com troca de paleta. O Aseprite serve para desenhar os
+> templates base e os overrides feitos à mão. Detalhes em
+> [`arquitetura.md`](arquitetura.md).
+
 | Item | Escolha | Por quê |
 |---|---|---|
 | Editor | **Aseprite** (ou **LibreSprite**, fork grátis) | Padrão de pixel art; timeline de animação, tags por animação, export de spritesheet + JSON. Alternativa no navegador: Piskel. |

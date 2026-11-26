@@ -1,0 +1,41 @@
+# Nala (a.k.a. Van Nala) — a calma. Tranquila, carente, sempre de barriga pra cima.
+
+[pet]
+id = "nala"
+nome = "Nala"
+apelido = "Van Nala"
+especie = "cachorro"
+
+[aparencia]
+porte = 1.0
+orelhas = "em_pe"             # enormes e pontudas
+orelha_marca = "corte_ponta_direita"   # corte na ponta da orelha direita (dela) — obrigatório
+focinho = "longo"
+olhos = "amendoados"
+padrao = "tricolor_sela"      # preto no dorso/topo da cabeça, rosto caramelo, peito branco
+sobrancelhas = true           # pontos caramelo claros acima dos olhos
+patas = "brancas"
+corpo = "medio"
+
+[aparencia.cores]
+base  = "#2b2422"             # preto da pelagem
+marca = "#c08a4e"             # caramelo do rosto
+claro = "#f2ede4"             # peito e patas
+nariz = "#1e1a19"
+olhos = "#6b3f1f"
+
+[personalidade]
+tracos = ["tranquila", "carente", "doce"]
+energia = 0.3
+desconfianca = 0.1
+carinho = 1.0                 # anima "barriguinha" com frequência
+papel = "progresso"           # reporta andamento, sucesso; consola nos erros
+
+[voz]
+tom = 0.85
+velocidade = 0.9
+
+[[extras]]
+id = "van_nala"
+descricao = "Fundo vira céu em redemoinhos estilo Van Gogh; pose de retrato."
+gatilho = "marco"

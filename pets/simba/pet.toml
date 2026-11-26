@@ -1,0 +1,38 @@
+# Simba — o vigia. Pequeno, mandão, desconfiado e grudento.
+
+[pet]
+id = "simba"
+nome = "Simba"
+especie = "cachorro"
+
+[aparencia]
+porte = 0.82                  # relativo à Nala (1.0)
+orelhas = "semi_caidas"       # pontas dobradas; às vezes uma levanta
+focinho = "medio"
+olhos = "grandes_redondos"    # esbugalhados, olhar desconfiado
+padrao = "mascara"            # branco com máscara caramelo nos lados do rosto e orelhas
+listra_testa = true           # faixa branca do meio da testa até o focinho
+corpo = "magro"
+
+[aparencia.cores]
+base  = "#f4efe6"             # branco da pelagem
+marca = "#c47a3a"             # caramelo da máscara / orelhas
+claro = "#ffffff"
+nariz = "#3a2620"
+olhos = "#2a1a14"
+
+[personalidade]
+tracos = ["mandao", "desconfiado", "atento", "tenso", "carinhoso", "grudento"]
+energia = 0.6
+desconfianca = 0.9            # pálpebras semicerradas, olhar lateral frequente
+carinho = 0.8                 # anima "colado" quando ocioso
+papel = "alerta"              # reporta erros, problemas, cobranças
+
+[voz]
+tom = 1.15                    # bipes mais agudos (porte menor)
+velocidade = 1.15             # fala rápida e curta
+
+[[extras]]
+id = "astronauta"
+descricao = "Capacete de astronauta desce do topo; fundo de estrelas."
+gatilho = "deploy"
